@@ -3,42 +3,42 @@ let buffer = null;
 let balls = null;
 let preset = 0;
 const audioFilesPaths = [
-  "music/sound1.mp3",
-  "music/sound2.mp3",
-  "music/sound3.mp3",
-  "music/sound4.mp3",
-  "music/sound5.mp3",
-  "music/sound6.mp3",
-  "music/sound7.mp3",
-  "music/sound8.mp3",
-  "music/sound9.mp3",
-  "music/sound10.mp3",
-  "music/sound11.mp3",
-  "music/sound12.mp3",
-  "music/sound13.mp3",
-  "music/sound14.mp3",
-  "music/sound15.mp3",
-  "music/sound16.mp3",
-  "music/sound17.mp3",
-  "music/sound18.mp3",
-  "music/sound19.mp3",
-  "music/sound20.mp3",
-  "music/sound21.mp3",
-  "music/sound22.mp3",
-  "music/sound23.mp3",
-  "music/sound24.mp3",
-  "music/sound25.mp3",
-  "music/sound26.mp3",
-  "music/sound27.mp3",
-  "music/sound28.mp3",
-  "music/sound29.mp3",
-  "music/sound30.mp3",
-  "music/sound31.mp3",
-  "music/sound32.mp3",
-  "music/sound33.mp3",
-  "music/sound34.mp3",
-  "music/sound35.mp3",
-  "music/sound36.mp3",
+  "./music/sound1.mp3",
+  "./music/sound2.mp3",
+  "./music/sound3.mp3",
+  "./music/sound4.mp3",
+  "./music/sound5.mp3",
+  "./music/sound6.mp3",
+  "./music/sound7.mp3",
+  "./music/sound8.mp3",
+  "./music/sound9.mp3",
+  "./music/sound10.mp3",
+  "./music/sound11.mp3",
+  "./music/sound12.mp3",
+  "./music/sound13.mp3",
+  "./music/sound14.mp3",
+  "./music/sound15.mp3",
+  "./music/sound16.mp3",
+  "./music/sound17.mp3",
+  "./music/sound18.mp3",
+  "./music/sound19.mp3",
+  "./music/sound20.mp3",
+  "./music/sound21.mp3",
+  "./music/sound22.mp3",
+  "./music/sound23.mp3",
+  "./music/sound24.mp3",
+  "./music/sound25.mp3",
+  "./music/sound26.mp3",
+  "./music/sound27.mp3",
+  "./music/sound28.mp3",
+  "./music/sound29.mp3",
+  "./music/sound30.mp3",
+  "./music/sound31.mp3",
+  "./music/sound32.mp3",
+  "./music/sound33.mp3",
+  "./music/sound34.mp3",
+  "./music/sound35.mp3",
+  "./music/sound36.mp3",
 ];
 
 class Balls {
@@ -69,20 +69,25 @@ class Balls {
 }
 
 class Buffer {
-  constructor(context, audioFiles) {
-    this.context = context;
+  constructor(audioFiles) {
     this.audioFiles = audioFiles;
-    this.buffer = [];
+    this.sounds = [];
   }
 
   async loadAudioFiles() {
     try {
-      for (let i = 0; i < this.audioFiles.length; i++) {
-        const file = this.audioFiles[i];
-        console.log(file);
-        const arrayBuffer = await this.readFileAsArrayBuffer(file);
-        const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-        this.buffer.push(audioBuffer);
+      for (const audioPath of this.audioFiles) {
+        const sound = new Howl({
+          src: [audioPath],
+          preload: true,
+          onload: () => {
+            console.log(`Audio file ${audioPath} loaded`);
+          },
+          onloaderror: (error) => {
+            console.error(`Error loading audio file ${audioPath}:`, error);
+          },
+        });
+        this.sounds.push(sound);
       }
 
       this.loaded();
@@ -91,26 +96,12 @@ class Buffer {
     }
   }
 
-  readFileAsArrayBuffer(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        resolve(event.target.result);
-      };
-      reader.onerror = function (error) {
-        reject(error);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
   loaded() {
-    // Do something when all audio files are loaded
     console.log("All audio files loaded");
   }
 
   getAudioBuffer(index) {
-    return this.buffer[index];
+    return this.sounds[index];
   }
 }
 
@@ -131,19 +122,21 @@ async function loadAudioFiles(audioFilesPaths) {
 
 async function init() {
   try {
-    context = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffers = await loadAudioFiles(audioFilesPaths);
-    buffer = new Buffer(context, audioBuffers);
-    console.log("All audio files loaded");
+    context = new AudioContext();
+    buffer = new Buffer(audioFilesPaths);
+    await buffer.loadAudioFiles();
   } catch (e) {
     console.error("Error initializing audio context:", e);
   }
 }
 
 function playBalls(index) {
-  if (!context || !buffer) return;
-  if (index >= 0 && index < audioFilesPaths.length) {
-    balls = new Balls(context, buffer.getAudioBuffer(index));
+  if (!buffer || index < 0 || index >= buffer.sounds.length) return;
+  if (balls && balls.playing()) {
+    balls.stop();
+  }
+  balls = buffer.getAudioBuffer(index);
+  if (balls) {
     balls.play();
   }
 }
@@ -155,18 +148,17 @@ function stopBalls() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  init();
-
-  const elementsWithDataNote = document.querySelectorAll("[data-note]");
-
-  elementsWithDataNote.forEach((element) => {
-    element.addEventListener("mouseover", function (event) {
-      const index = parseInt(event.target.dataset.note) + preset;
-      playBalls(index);
-    });
-  });
+  document.addEventListener("click", init);
 });
 
+const elementsWithDataNote = document.querySelectorAll("[data-note]");
+
+elementsWithDataNote.forEach((element) => {
+  element.addEventListener("mouseover", function (event) {
+    const index = parseInt(event.target.dataset.note) + preset;
+    playBalls(index);
+  });
+});
 function ballBounce(e) {
   var i = e;
   if (e.className.indexOf(".bounce") > -1) {
@@ -204,10 +196,8 @@ var array2 = document.querySelectorAll(".ball_bounce .ball_right");
 for (var i = 0; i < array1.length; i++) {
   array1[i].addEventListener("mouseenter", function () {
     ballBounce(this);
+    const index = parseInt(this.dataset.note) + preset;
+    playBalls(index);
   });
 }
-for (var i = 0; i < array2.length; i++) {
-  array2[i].addEventListener("mouseenter", function () {
-    ballBounce(this);
-  });
-}
+
