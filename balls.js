@@ -125,8 +125,8 @@ async function init() {
     context = new AudioContext();
     buffer = new Buffer(audioFilesPaths);
     await buffer.loadAudioFiles();
-  } catch (e) {
-    console.error("Error initializing audio context:", e);
+  } catch (error) {
+    console.error("Error initializing audio context:", error);
   }
 }
 
@@ -160,7 +160,7 @@ elementsWithDataNote.forEach((element) => {
   });
 });
 function ballBounce(e) {
-  var i = e;
+  let i = e;
   if (e.className.indexOf(".bounce") > -1) {
     return;
   }
@@ -190,14 +190,13 @@ function toggleBounce(i) {
   setTimeout(n, 300);
 }
 
-var array1 = document.querySelectorAll(".ball_bounce");
-var array2 = document.querySelectorAll(".ball_bounce .ball_right");
+let array1 = document.querySelectorAll(".ball_bounce");
+let array2 = document.querySelectorAll(".ball_bounce .ball_right");
 
-for (var i = 0; i < array1.length; i++) {
+for (let i = 0; i < array1.length; i++) {
   array1[i].addEventListener("mouseenter", function () {
     ballBounce(this);
     const index = parseInt(this.dataset.note) + preset;
     playBalls(index);
   });
 }
-
